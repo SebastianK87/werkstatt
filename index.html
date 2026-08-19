@@ -600,8 +600,13 @@ copyBtn.addEventListener('click',()=>{
   }
 });
 
-/* hero reveal */
-addEventListener('load',()=>requestAnimationFrame(()=>document.getElementById('heroH').classList.add('in')));
+/* hero reveal — robust: sofort nach zwei Frames, egal wann load kommt */
+(function(){
+  const h=document.getElementById('heroH');
+  const go=()=>h.classList.add('in');
+  requestAnimationFrame(()=>requestAnimationFrame(go));
+  setTimeout(go,900);
+})();
 
 /* reveals */
 const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}})},{threshold:.15});
