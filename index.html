@@ -35,11 +35,14 @@ img{display:block;max-width:100%}
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 .progress{position:fixed;top:0;left:0;height:2px;width:0;background:var(--gold);z-index:10000;transition:width .12s linear}
 
-.cur-dot,.cur-ring{position:fixed;top:0;left:0;z-index:10001;pointer-events:none;border-radius:50%;will-change:transform;mix-blend-mode:difference}
-.cur-dot{width:6px;height:6px;background:#fff;transform:translate(-50%,-50%)}
-.cur-ring{width:36px;height:36px;border:1px solid rgba(255,255,255,.55);transform:translate(-50%,-50%);transition:width .3s var(--ease),height .3s var(--ease),background .3s,border-color .3s}
+.cur-ring{position:fixed;top:0;left:0;z-index:10001;pointer-events:none;border-radius:50%;will-change:transform;mix-blend-mode:difference;
+  width:36px;height:36px;border:1px solid rgba(255,255,255,.55);transform:translate(-50%,-50%);transition:width .3s var(--ease),height .3s var(--ease),background .3s,border-color .3s}
 .cur-ring.hov{width:58px;height:58px;background:rgba(255,255,255,.07);border-color:transparent}
-@media (hover:none){.cur-dot,.cur-ring{display:none}}
+.cur-plug{position:fixed;top:0;left:0;z-index:10002;pointer-events:none;width:30px;height:30px;will-change:transform;
+  filter:drop-shadow(0 2px 4px rgba(18,17,16,.35))}
+.cur-plug g{fill:var(--gold);stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round}
+.cur-plug.hov g{fill:var(--ink);stroke:var(--gold)}
+@media (hover:none){.cur-plug,.cur-ring{display:none}}
 
 .sl{color:var(--gold)}
 .gold{color:var(--gold)}
@@ -246,7 +249,13 @@ img{display:block;max-width:100%}
 <div class="grain"></div>
 <div class="progress" id="progress"></div>
 <div class="cur-ring" id="curRing"></div>
-<div class="cur-dot" id="curDot"></div>
+<svg class="cur-plug" id="curPlug" viewBox="0 0 64 64" aria-hidden="true">
+  <g>
+    <path d="M32 3 C 45 13, 48 27, 41 38 L23 38 C 16 27, 19 13, 32 3 Z"/>
+    <rect x="26.5" y="38" width="11" height="7" rx="3"/>
+    <ellipse cx="32" cy="49" rx="17" ry="5.5"/>
+  </g>
+</svg>
 
 <!-- RECHNUNGS-TICKER -->
 <aside class="bill" id="bill" aria-hidden="true">
@@ -456,16 +465,27 @@ claude plugin install commit-commands@claude-plugins-official">
 </footer>
 
 <script>
-/* cursor */
+/* cursor — der Plug ;) */
 (function(){
-  const dot=document.getElementById('curDot'), ring=document.getElementById('curRing');
+  const plug=document.getElementById('curPlug'), ring=document.getElementById('curRing');
   if(!matchMedia('(hover:hover)').matches)return;
-  let mx=innerWidth/2,my=innerHeight/2,rx=mx,ry=my;
-  addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;dot.style.transform=`translate(${mx}px,${my}px) translate(-50%,-50%)`;});
-  (function loop(){rx+=(mx-rx)*.18;ry+=(my-ry)*.18;ring.style.transform=`translate(${rx}px,${ry}px) translate(-50%,-50%)`;requestAnimationFrame(loop);})();
+  let mx=innerWidth/2,my=innerHeight/2,rx=mx,ry=my,px=mx,rot=-28,scale=1,tScale=1;
+  addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+  (function loop(){
+    /* Ring zieht weich hinterher */
+    rx+=(mx-rx)*.18;ry+=(my-ry)*.18;
+    ring.style.transform=`translate(${rx}px,${ry}px) translate(-50%,-50%)`;
+    /* Plug: Spitze am Zeiger, kippt mit der Bewegung */
+    const vx=mx-px;px+=(mx-px)*.5;
+    const tRot=-28+Math.max(-16,Math.min(16,vx*.9));
+    rot+=(tRot-rot)*.15;
+    scale+=(tScale-scale)*.2;
+    plug.style.transform=`translate(${mx}px,${my}px) translate(-50%,-6%) rotate(${rot}deg) scale(${scale})`;
+    requestAnimationFrame(loop);
+  })();
   document.querySelectorAll('[data-cur],.pick,.copybtn').forEach(el=>{
-    el.addEventListener('mouseenter',()=>ring.classList.add('hov'));
-    el.addEventListener('mouseleave',()=>ring.classList.remove('hov'));
+    el.addEventListener('mouseenter',()=>{ring.classList.add('hov');plug.classList.add('hov');tScale=1.25;});
+    el.addEventListener('mouseleave',()=>{ring.classList.remove('hov');plug.classList.remove('hov');tScale=1;});
   });
 })();
 
